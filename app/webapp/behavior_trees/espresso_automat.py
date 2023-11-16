@@ -41,16 +41,16 @@ class EspressoBehaviour(py_trees.behaviour.Behaviour):
             self.logger.debug("%s schon gesetzt." % self.name)
             return py_trees.common.Status.SUCCESS
         else:
-            set_button_now = True  # Set to True to always use values from the form
+            set_button_now = True
             if set_button_now:
                 if self.values is None:
                     if self.range is not None and type(self.range) is tuple:
-                        chosen_value = self.blackboard.get(self.key)  # Use value from the form
+                        chosen_value = self.blackboard.get(self.key)
                     else:
                         self.logger.debug(
                             "%s: error during update: key values are not a list, but range of int values is not given.")
                 else:
-                    chosen_value = self.blackboard.get(self.key)  # Use value from the form
+                    chosen_value = self.blackboard.get(self.key)
 
                 self.logger.debug("%s will einen %s" % (self.name, chosen_value))
                 self.confirmed = True
