@@ -27,18 +27,20 @@ def get_api_info():
 
 @api_blueprint.route("trigger_espresso_automat_tree/", methods=["POST"])
 def trigger_espresso_automat_tree():
-    """
-    Trigger Espresso automat behavior tree.
-    """
-    # data = request.json
+    data = request.json
     try:
-        program, strength, temperature, quantity = espresso_automat_main()
+        program, strength, temperature, quantity = espresso_automat_main(
+            program=data.get('program'),
+            temperature=data.get('temperature'),
+            strength=data.get('strength'),
+            quantity=data.get('quantity')
+        )
         status_code = 200
         res = {'program': program,
                'strength': strength,
                'temperature': temperature,
                'quantity': quantity}
-    except:
+    except Exception as e:
         status_code = 444
-        res = {}
+        res = {'error': str(e)}
     return jsonify(res), status_code

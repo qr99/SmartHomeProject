@@ -5,16 +5,19 @@ const submitButton = document.getElementById("submitButton");
 const API_URL_PREFIX = "api/1.0/";
 
 
-async function triggerBehaviourTree() {
+async function triggerBehaviourTree(program, temperature, strength, quantity) {
     var coffee_machine_parameters = {};
-    await $.ajax
-    ({
+    await $.ajax({
         type: "POST",
         url: API_URL_PREFIX  + "trigger_espresso_automat_tree/",
         contentType: "application/json",
-        data: JSON.stringify({}),
+        data: JSON.stringify({
+            program: program,
+            temperature: temperature,
+            strength: strength,
+            quantity: quantity
+        }),
         success: function (response) {
-            // coffee_machine_parameters = JSON.parse(response);
             coffee_machine_parameters = response;
         },
         error: function (error) {
@@ -26,12 +29,18 @@ async function triggerBehaviourTree() {
 
 form.addEventListener("submit", async function(event) {
     event.preventDefault(); // Prevent the default form submission
+
+    const program = document.getElementById("program").value;
+    const temperature = document.getElementById("temperature").value;
+    const strength = document.getElementById("strength").value;
+    const quantity = document.getElementById("quantity").value;
+
     loadingBar.style.display = "block"; // Display the loading bar
     output.style.display = "block"; // Display the output
     submitButton.disabled = true; // Disable the submit button
 
-    var behavior_tree_response = await triggerBehaviourTree();
-    console.log(behavior_tree_response);
+    var behavior_tree_response = await triggerBehaviourTree(program, temperature, strength, quantity);
+
     output.innerHTML = "<ul><li>Program: " + behavior_tree_response['program'] +
         "</li><li>Temperature: " + behavior_tree_response['temperature'] +
         "</li><li>Strength: " + behavior_tree_response['strength'] +

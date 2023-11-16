@@ -41,13 +41,17 @@ class EspressoBehaviour(py_trees.behaviour.Behaviour):
             self.logger.debug("%s schon gesetzt." % self.name)
             return py_trees.common.Status.SUCCESS
         else:
-            set_button_now = random.choice([True, False])
-            if self.values == None:
-                chosen_value = random.randint(self.min_val, self.max_val)
-            else:
-                chosen_value = random.choice(self.values)
-
+            set_button_now = True  # Set to True to always use values from the form
             if set_button_now:
+                if self.values is None:
+                    if self.range is not None and type(self.range) is tuple:
+                        chosen_value = self.blackboard.get(self.key)  # Use value from the form
+                    else:
+                        self.logger.debug(
+                            "%s: error during update: key values are not a list, but range of int values is not given.")
+                else:
+                    chosen_value = self.blackboard.get(self.key)  # Use value from the form
+
                 self.logger.debug("%s will einen %s" % (self.name, chosen_value))
                 self.confirmed = True
                 self.blackboard.set(self.key, chosen_value)
@@ -81,10 +85,27 @@ class FillQuantityBehaviour(EspressoBehaviour):
     def __init__(self, name, key, values=None, val_range=None):
         super(FillQuantityBehaviour, self).__init__(name, key, val_range=val_range)
 
+class StartButtonBehaviour(py_trees.behaviour.Behaviour):
+    def __init__(self, name):
+        super(StartButtonBehaviour, self).__init__(name)
+
+    def setup(self):
+        self.logger.debug("%s [setup()]" % self.name)
+
+    def initialise(self):
+        self.logger.debug("%s [initialise()]" % self.name)
+
+    def update(self):
+        self.logger.debug("%s pressed" % self.name)
+        return py_trees.common.Status.SUCCESS
+
+    def terminate(self, new_status):
+        self.logger.debug("%s [StartButtonBehaviour::terminate()][%s->%s]" % (self.name, self.status, new_status))
+
 
 def create_parameter_setters(blackboard) -> py_trees.behaviour.Behaviour:
     blackboard.register_key(key="program", access=py_trees.common.Access.WRITE)
-    blackboard.set('program', 'dsfgsdg')
+    blackboard.set('program', 'Test')
     blackboard.register_key(key="temperature", access=py_trees.common.Access.WRITE)
     blackboard.temperature = 'default'
     blackboard.register_key(key="strength", access=py_trees.common.Access.WRITE)
@@ -96,26 +117,27 @@ def create_parameter_setters(blackboard) -> py_trees.behaviour.Behaviour:
                                         policy=py_trees.common.ParallelPolicy.SuccessOnAll())
     tree.add_child(ProgramBehaviour("Program",
                                     "program",
-                                    values=['Espresso', 'Espresso Macchiato', 'Coffee', 'Cappuccino', 'Latte Macchiato',
-                                            'Caffè Latte']))
+                                    values=['Espresso', 'Espresso Macchiato', 'Coffee', 'Cappuccino', 'Latte Macchiato', 'Caffè Latte']))
 
     tree.add_child(TemperatureBehaviour("Temperature",
-                                        "temperature",
-                                        values=['normal', 'high', 'very high']))
+                                       "temperature",
+                                       values=['normal', 'high', 'very high']))
 
     tree.add_child(StrengthBehaviour("Strength",
                                      "strength",
-                                     values=['very mild', 'mild', 'normal', 'strong', 'very strong', 'double shot',
-                                             'double shot plus', 'double shot plus plus']))
+                                     values=['very mild', 'mild', 'normal', 'strong', 'very strong', 'double shot', 'double shot plus', 'double shot plus plus']))
 
     tree.add_child(FillQuantityBehaviour("Quantity",
                                          "fill_quantity",
                                          val_range=(1, 251)))
 
+    start_button = StartButtonBehaviour("StartButton")
+    tree.add_child(start_button)
+
     return tree
 
 
-def espresso_automat_main():
+def espresso_automat_main(program=None, temperature=None, strength=None, quantity=None):
     py_trees.logging.level = py_trees.logging.Level.DEBUG
     blackboard = py_trees.blackboard.Client(name="Tree")
 
@@ -123,6 +145,15 @@ def espresso_automat_main():
     bt.setup()
 
     try:
+        if program:
+            blackboard.set('program', program)
+        if temperature:
+            blackboard.set('temperature', temperature)
+        if strength:
+            blackboard.set('strength', strength)
+        if quantity is not None:
+            blackboard.set('fill_quantity', quantity)
+
         i = 0
         while bt.root.status != py_trees.common.Status.SUCCESS:
             bt.tick()
